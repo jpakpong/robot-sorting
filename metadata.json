@@ -1,0 +1,6 @@
+{
+  "name": "ROBOT SORTING SIMULATION - Hand & Finger Controlled Arm",
+  "description": "Industrial 2D SCARA robotic pick-and-place simulation game controlled via real-time webcam hand tracking, mouse/touch mode, and pinch gestures, optimized for iPad 11-inch screens.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
