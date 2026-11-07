@@ -211,9 +211,28 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
     }
 
     // Side safety rails
-    ctx.fillStyle = '#475569';
+    ctx.fillStyle = engine.isChallengeActive ? '#f59e0b' : '#475569';
     ctx.fillRect(conveyorX - 7, 20, 5, conveyorStartY - 18);
     ctx.fillRect(conveyorX + conveyorWidth + 2, 20, 5, conveyorStartY - 18);
+
+    // Continuous Challenge Mode Header Pill on Conveyor
+    if (engine.isChallengeActive) {
+      const nextSpawnSec = Math.max(0, (4000 - engine.conveyor.spawnTimer) / 1000).toFixed(1);
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(conveyorX - 16, 24, conveyorWidth + 32, 24, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      ctx.fillText(`⚡ NEXT BOX: ${nextSpawnSec}s`, conveyorX + conveyorWidth / 2, 36);
+      ctx.font = 'bold 7px "JetBrains Mono", monospace';
+      ctx.fillText(`4s PICKUP STOP`, conveyorX + conveyorWidth / 2, 44);
+    }
 
     // Pickup Station Zone
     const isBoxAtPickup =
@@ -270,7 +289,7 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
     // Pickup LED beacon indicator
     ctx.beginPath();
     ctx.arc(conveyorX + conveyorWidth / 2, pickupY - 42, 6, 0, Math.PI * 2);
-    ctx.fillStyle = isBoxAtPickup ? '#22c55e' : '#f59e0b';
+    ctx.fillStyle = isBoxAtPickup ? '#22c55e' : engine.isChallengeActive ? '#f59e0b' : '#38bdf8';
     ctx.fill();
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.5;
@@ -278,9 +297,13 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
 
     // Station Label
     ctx.font = 'bold 9px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = engine.isChallengeActive ? '#f59e0b' : '#64748b';
     ctx.textAlign = 'center';
-    ctx.fillText('PICKUP STATION', pickupX, pickupY - 48);
+    ctx.fillText(
+      engine.isChallengeActive ? '3s STOP PICKUP' : 'PICKUP STATION',
+      pickupX,
+      pickupY - 48
+    );
 
     ctx.restore();
   };
@@ -586,18 +609,20 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
   };
 
   const drawBoxes = (ctx: CanvasRenderingContext2D) => {
-    // 1. Box on Conveyor (if not yet in gripper)
-    const activeBox = engine.conveyor.getActiveBox();
-    if (activeBox && activeBox.status !== 'in_gripper') {
-      drawSingleBox(ctx, activeBox);
-    }
+    // 1. Boxes on Conveyor
+    const conveyorBoxes = engine.conveyor.getBoxes();
+    conveyorBoxes.forEach((b: Box) => {
+      if (b.status !== 'in_gripper') {
+        drawSingleBox(ctx, b);
+      }
+    });
 
     // 2. Carried Box in Gripper
     if (engine.carriedBox) {
       drawSingleBox(ctx, engine.carriedBox);
     }
 
-    // 3. Dropping Boxes into Bins
+    // 3. Dropping Boxes (into bins or dropped from collisions/overflow)
     engine.droppingBoxes.forEach((b: Box) => {
       drawSingleBox(ctx, b);
     });
@@ -608,30 +633,85 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
     const half = box.size / 2;
 
     ctx.save();
+    ctx.translate(box.x, box.y);
+
+    if (box.rotation) {
+      ctx.rotate(box.rotation);
+    }
+
+    // If collided, draw flashing red collision warning aura
+    if (box.isCollided) {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, half + 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
 
     // Box Drop Shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-    ctx.fillRect(box.x - half + 3, box.y - half + 4, box.size, box.size);
+    ctx.fillRect(-half + 3, -half + 4, box.size, box.size);
 
     // Box Body
-    ctx.fillStyle = colors.bg;
-    ctx.strokeStyle = colors.border;
+    ctx.fillStyle = box.isCollided ? '#ef4444' : colors.bg;
+    ctx.strokeStyle = box.isCollided ? '#f87171' : colors.border;
     ctx.lineWidth = 2.5;
 
     ctx.beginPath();
-    ctx.roundRect(box.x - half, box.y - half, box.size, box.size, 5);
+    ctx.roundRect(-half, -half, box.size, box.size, 5);
     ctx.fill();
     ctx.stroke();
 
     // Industrial package tape detail across box
     ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
-    ctx.fillRect(box.x - half, box.y - 4, box.size, 8);
+    ctx.fillRect(-half, -4, box.size, 8);
 
     // Barcode / Label stamp
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.font = 'bold 8px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(box.color.toUpperCase(), box.x, box.y + 3);
+    ctx.fillText(box.isCollided ? 'COLLISION' : box.color.toUpperCase(), 0, 3);
+
+    // Second Half: 3-second dwell countdown indicator while stopped at pickup station (First Half does not show stop time, just stops)
+    if (
+      engine.isChallengeActive &&
+      box.status === 'at_pickup' &&
+      box.dwellTimeRemaining !== undefined &&
+      box.dwellTimeRemaining > 0
+    ) {
+      const dwellSec = (box.dwellTimeRemaining / 1000).toFixed(1);
+      const isUrgent = box.dwellTimeRemaining <= 1000;
+
+      // Floating dwell countdown badge above box
+      ctx.fillStyle = isUrgent ? 'rgba(239, 68, 68, 0.95)' : 'rgba(15, 23, 42, 0.92)';
+      ctx.strokeStyle = isUrgent ? '#ef4444' : '#f59e0b';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(-26, -half - 19, 52, 15, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = 'bold 8px "JetBrains Mono", monospace';
+      ctx.fillStyle = isUrgent ? '#fee2e2' : '#fef08a';
+      ctx.textAlign = 'center';
+      ctx.fillText(`STOP ${dwellSec}s`, 0, -half - 8);
+
+      // Radial countdown progress arc (based on 3000ms dwell window)
+      const progress = Math.max(0, Math.min(1, box.dwellTimeRemaining / 3000));
+      ctx.strokeStyle = isUrgent ? '#ef4444' : '#f59e0b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, half + 5, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+      ctx.stroke();
+    } else if (box.hasCompletedPickupDwell && box.status === 'on_conveyor') {
+      // Box moving continuously to conveyor end indicator
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+      ctx.font = 'bold 7px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('▲ PASSING', 0, -half - 6);
+    }
 
     ctx.restore();
   };
@@ -671,11 +751,11 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
     const q2Deg = Math.round((currentAngles.q2 * 180) / Math.PI);
 
     ctx.save();
-    // HUD Card at bottom-left corner
-    const hudX = 20;
-    const hudY = V_HEIGHT - 82;
+    // HUD Card at right-bottom corner
     const hudW = 230;
     const hudH = 64;
+    const hudX = V_WIDTH - hudW - 20;
+    const hudY = V_HEIGHT - hudH - 18;
 
     ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
     ctx.strokeStyle = '#334155';
@@ -843,9 +923,9 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
   const isGripperClosed = engine.robot.getGripperClosed();
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-between p-2 lg:p-3 overflow-hidden simulation-grid rounded-2xl border border-slate-700/60 shadow-2xl">
+    <div className="relative w-full h-full min-h-0 flex flex-col items-center justify-between p-1.5 lg:p-2 overflow-hidden simulation-grid rounded-xl border border-slate-800 shadow-xl">
       {/* Simulation Title bar */}
-      <div className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-slate-700/80 rounded-t-xl text-xs text-slate-300 font-mono">
+      <div className="w-full flex items-center justify-between px-3 py-1 bg-slate-900/95 border-b border-slate-800 rounded-t-lg text-xs text-slate-300 font-mono shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
           <span className="font-tech font-bold text-slate-100 tracking-wider">
@@ -853,9 +933,17 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-3 text-[11px] text-slate-400">
-          <span className="hidden sm:inline">PICKUP: LEFT CONVEYOR</span>
-          <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:inline">SORT BINS: RIGHT (CLOSE REACH)</span>
+          {engine.isChallengeActive ? (
+            <span className="text-amber-300 font-bold bg-amber-950/90 px-2 py-0.5 rounded border border-amber-500 animate-pulse flex items-center gap-1">
+              <span>⚡ SECOND HALF: BOX STOPS 3s AT PICKUP BEFORE MOVING TO END (PREVENT COLLISIONS!)</span>
+            </span>
+          ) : (
+            <>
+              <span className="hidden sm:inline">PICKUP: LEFT CONVEYOR</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">SORT BINS: RIGHT</span>
+            </>
+          )}
           {useMouseFallback && (
             <span className="text-amber-400 font-bold bg-amber-950/80 px-2 py-0.5 rounded border border-amber-600/60">
               {deviceType === 'mouse' ? 'MOUSE ACTIVE (HOLD CLICK TO GRAB)' : 'TOUCH ACTIVE (USE BUTTON)'}
@@ -865,7 +953,7 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
       </div>
 
       {/* Main Canvas */}
-      <div className="relative w-full flex-1 flex items-center justify-center bg-slate-100 rounded-b-xl overflow-hidden shadow-inner">
+      <div className="relative w-full flex-1 min-h-0 flex items-center justify-center bg-slate-100 rounded-b-lg overflow-hidden shadow-inner">
         <canvas
           ref={canvasRef}
           width={V_WIDTH}
@@ -876,12 +964,12 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           style={{ touchAction: 'none' }}
-          className="w-full h-full max-h-[calc(100vh-170px)] object-contain cursor-crosshair select-none"
+          className="w-full h-full object-contain cursor-crosshair select-none"
         />
 
-        {/* Floating Tactile Grip Button (Specifically for Touch / iPad or quick click toggle) */}
+        {/* Floating Tactile Grip Button (Positioned at bottom-left to leave bottom-right HUD completely visible) */}
         {useMouseFallback && (
-          <div className="absolute bottom-3 right-3 z-30 flex items-center gap-2">
+          <div className="absolute bottom-3 left-3 z-30 flex items-center gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();

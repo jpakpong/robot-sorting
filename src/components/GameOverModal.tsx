@@ -19,12 +19,14 @@ import { GameStats } from '../types/game';
 interface GameOverModalProps {
   isOpen: boolean;
   stats: GameStats;
+  operatorName?: string;
   onPlayAgain: () => void;
 }
 
 export const GameOverModal: React.FC<GameOverModalProps> = ({
   isOpen,
   stats,
+  operatorName = 'Anonymous Operator',
   onPlayAgain,
 }) => {
   useEffect(() => {
@@ -66,8 +68,17 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative flex flex-col items-center text-center">
+        {/* University department badge */}
+        <div
+          data-dept="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
+          aria-label="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
+          className="text-[10px] font-mono uppercase text-amber-300 bg-amber-950/70 border border-amber-600/50 px-3 py-1 rounded-full mb-3"
+        >
+          Department of Mechanical Engineering, Faculty of Engineering, Burapha University
+        </div>
+
         {/* Top Trophy Icon */}
-        <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/25 mb-4 border border-amber-300">
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/25 mb-3 border border-amber-300">
           <Trophy className="w-8 h-8 fill-current" />
         </div>
 
@@ -75,7 +86,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         <h2 className="font-tech text-2xl md:text-3xl font-bold text-white uppercase tracking-wider">
           SHIFT COMPLETE!
         </h2>
-        <p className="text-xs text-slate-400 mt-1 mb-4 font-mono">
+        <div className="text-xs text-cyan-300 mt-1 mb-1 font-mono uppercase font-semibold">
+          Operator: {operatorName}
+        </div>
+        <p className="text-[11px] text-slate-400 mb-4 font-mono">
           3-MINUTE ROBOT PICK-AND-PLACE PRODUCTION RUN TERMINATED
         </p>
 

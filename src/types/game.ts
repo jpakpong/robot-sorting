@@ -14,6 +14,12 @@ export interface Box {
   status: 'on_conveyor' | 'at_pickup' | 'in_gripper' | 'dropping' | 'sorted' | 'rejected';
   dropProgress?: number; // 0 to 1 for dropping animation
   targetBinIndex?: number;
+  vx?: number;
+  vy?: number;
+  rotation?: number;
+  isCollided?: boolean;
+  dwellTimeRemaining?: number; // 4000ms countdown while stopped at pickup station
+  hasCompletedPickupDwell?: boolean;
 }
 
 export interface SortingBin {

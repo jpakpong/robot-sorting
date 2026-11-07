@@ -11,6 +11,7 @@ import { coordinateMapper } from './vision/coordinateMapping';
 import { soundManager } from './audio/soundManager';
 import { GameStats, GameStatus } from './types/game';
 
+import { WelcomePage } from './components/WelcomePage';
 import { GameHeader } from './components/GameHeader';
 import { RobotSimulation } from './components/RobotSimulation';
 import { WebcamPanel } from './components/WebcamPanel';
@@ -19,6 +20,10 @@ import { CalibrationModal } from './components/CalibrationModal';
 import { GameOverModal } from './components/GameOverModal';
 
 export default function App() {
+  // Page Navigation State: starts on 'welcome' page before simulation
+  const [currentPage, setCurrentPage] = useState<'welcome' | 'simulation'>('welcome');
+  const [operatorName, setOperatorName] = useState<string>('');
+
   // Game & Physics Engine instance
   const engineRef = useRef<GameEngine>(new GameEngine());
   const engine = engineRef.current;
@@ -75,7 +80,7 @@ export default function App() {
         const processed = recognizerRef.current.process(landmarksList);
         setGesture(processed);
 
-        if (engine.status === 'running' && !useMouseFallback) {
+        if (engine.status === 'running' && !useMouseFallback && currentPage === 'simulation') {
           // Closed fist pauses robot
           if (processed.isFist) {
             engine.robot.setPaused(true);
@@ -115,7 +120,7 @@ export default function App() {
     return () => {
       tracker.destroy();
     };
-  }, [engine, useMouseFallback]);
+  }, [engine, useMouseFallback, currentPage]);
 
   // Main game physics tick loop & state synchronization
   useEffect(() => {
@@ -149,6 +154,8 @@ export default function App() {
   // Keyboard shortcut listener (Spacebar for pinch/grip, Esc for pause)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (currentPage !== 'simulation') return;
+
       if (e.code === 'Space') {
         e.preventDefault();
         const currentClosed = engine.robot.getGripperClosed();
@@ -167,7 +174,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [engine]);
+  }, [engine, currentPage]);
 
   // Camera start handler
   const handleStartCamera = useCallback(async () => {
@@ -247,12 +254,27 @@ export default function App() {
     setIsGripperClosed(!isCurrentlyClosed);
   };
 
+  // If user is on Welcome Page, show Entry screen with Operator Name requirement & BUU banner
+  if (currentPage === 'welcome') {
+    return (
+      <WelcomePage
+        initialOperatorName={operatorName}
+        onStartSimulation={(name) => {
+          setOperatorName(name);
+          setCurrentPage('simulation');
+        }}
+      />
+    );
+  }
+
+  // Simulation Page: Aligned rectangular cockpit tailored for iPad 11-inch & Desktop
   return (
-    <div className="min-h-screen w-full bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden selection:bg-cyan-500 selection:text-black">
-      {/* 1. Header (Dark Navy with Industrial Telemetry & Action Buttons) */}
+    <div className="h-screen max-h-screen w-full bg-slate-950 flex flex-col font-sans text-slate-100 overflow-hidden select-none selection:bg-cyan-500 selection:text-black">
+      {/* 1. Rectangular Header Bar with Burapha University Branding & Aligned Stats Cards */}
       <GameHeader
         stats={stats}
         status={status}
+        operatorName={operatorName}
         isMuted={isMuted}
         useMouseFallback={useMouseFallback}
         onStart={handleStartGame}
@@ -264,12 +286,13 @@ export default function App() {
         onToggleMute={handleToggleMute}
         onToggleMouse={handleToggleMouse}
         onToggleFullscreen={handleToggleFullscreen}
+        onChangeOperator={() => setCurrentPage('welcome')}
       />
 
-      {/* 2. Main Two-Panel Content Area (Optimized for iPad 11-inch & Desktop Displays) */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-2 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-start">
-        {/* LEFT PANEL (~68% width on desktop/iPad landscape: 8 of 12 columns) */}
-        <div className="lg:col-span-8 w-full flex flex-col h-[520px] md:h-[580px] lg:h-[620px]">
+      {/* 2. Main Two-Panel Rectangular Workspace (Tailored for iPad 11-inch aspect ratio) */}
+      <main className="flex-1 w-full max-w-[1440px] mx-auto p-2 sm:p-2.5 grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch min-h-0 overflow-hidden">
+        {/* LEFT PANEL (~67% width: 8 of 12 columns) - Rectangular Simulation Container */}
+        <div className="lg:col-span-8 w-full h-full flex flex-col min-h-0 overflow-hidden">
           <RobotSimulation
             engine={engine}
             useMouseFallback={useMouseFallback}
@@ -280,9 +303,9 @@ export default function App() {
           />
         </div>
 
-        {/* RIGHT PANEL (~32% width on desktop/iPad landscape: 4 of 12 columns) */}
-        <div className="lg:col-span-4 w-full flex flex-col gap-3">
-          {/* Live Webcam with Hand Landmark Overlay */}
+        {/* RIGHT PANEL (~33% width: 4 of 12 columns) - Rectangular Vision & Telemetry Cards */}
+        <div className="lg:col-span-4 w-full h-full flex flex-col gap-2 min-h-0 overflow-y-auto pr-0.5">
+          {/* Live Webcam Card */}
           <WebcamPanel
             videoRef={videoRef}
             trackerStatus={trackerStatus}
@@ -299,6 +322,15 @@ export default function App() {
             isRobotPaused={isRobotPaused}
             useMouseFallback={useMouseFallback}
           />
+
+          {/* Institutional Credit Footer */}
+          <div
+            data-dept="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
+            aria-label="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
+            className="text-center text-[10px] font-mono text-slate-500 py-1 shrink-0"
+          >
+            Department of Mechanical Engineering, Faculty of Engineering, Burapha University
+          </div>
         </div>
       </main>
 
@@ -316,6 +348,7 @@ export default function App() {
       <GameOverModal
         isOpen={status === 'game_over'}
         stats={stats}
+        operatorName={operatorName}
         onPlayAgain={handleStartGame}
       />
     </div>

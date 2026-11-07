@@ -12,7 +12,6 @@ import {
   Crosshair,
   Volume2,
   VolumeX,
-  MousePointer,
   Touchpad,
   Camera,
   Maximize2,
@@ -20,12 +19,15 @@ import {
   Clock,
   Award,
   Target,
+  User,
+  LogOut,
 } from 'lucide-react';
 import { GameStats, GameStatus } from '../types/game';
 
 interface GameHeaderProps {
   stats: GameStats;
   status: GameStatus;
+  operatorName: string;
   isMuted: boolean;
   useMouseFallback: boolean;
   onStart: () => void;
@@ -37,11 +39,13 @@ interface GameHeaderProps {
   onToggleMute: () => void;
   onToggleMouse: () => void;
   onToggleFullscreen: () => void;
+  onChangeOperator?: () => void;
 }
 
 export const GameHeader: React.FC<GameHeaderProps> = ({
   stats,
   status,
+  operatorName,
   isMuted,
   useMouseFallback,
   onStart,
@@ -53,6 +57,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onToggleMute,
   onToggleMouse,
   onToggleFullscreen,
+  onChangeOperator,
 }) => {
   const isTimeCritical = stats.timeRemaining <= 20 && stats.timeRemaining > 0;
   const minutes = Math.floor(stats.timeRemaining / 60);
@@ -60,43 +65,52 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   const formattedTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 
   return (
-    <header className="h-20 bg-slate-900 border-b border-slate-800 px-3 md:px-6 flex items-center justify-between text-white shadow-xl select-none relative z-20">
-      {/* Brand & Mode */}
+    <header className="h-16 md:h-18 bg-slate-900 border-b border-slate-800 px-3 md:px-5 flex items-center justify-between text-white shadow-xl select-none shrink-0 relative z-20">
+      {/* Left: App Branding & Operator */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-400/40">
-          <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
-          </div>
-        </div>
+        {/* Title */}
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-tech text-base md:text-lg font-bold tracking-wider text-slate-100 uppercase">
+            <h1 className="font-tech text-sm md:text-base font-bold tracking-wider text-slate-100 uppercase leading-none">
               SORTING SIMULATION
             </h1>
-            <span className="text-[10px] uppercase font-mono tracking-widest px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/80 hidden sm:inline-block">
-              2R Robotic Arm
+            <span className="text-[9px] uppercase font-mono tracking-widest px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/80 hidden sm:inline-block">
+              2R Arm
             </span>
           </div>
-          <p className="text-xs text-slate-400 hidden lg:block">
-            Vision Gestures & Touch/Mouse Controlled Industrial Pick-and-Place
-          </p>
+          <div className="text-[10px] text-slate-400 font-mono hidden lg:flex items-center gap-1.5 mt-0.5">
+            <User className="w-3 h-3 text-cyan-400" />
+            <span>OPERATOR:</span>
+            <span className="text-amber-300 font-bold uppercase">{operatorName || 'ANONYMOUS'}</span>
+          </div>
         </div>
       </div>
 
-      {/* Center Dashboard Statistics */}
-      <div className="flex items-center gap-3 md:gap-5 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-slate-800/80 shadow-inner">
-        {/* Time Remaining (3 Min Countdown M:SS) */}
-        <div className="flex items-center gap-2">
+      {/* Center: Rectangular Dashboard Statistics Cards (Aligned for 11-inch iPad) */}
+      <div className="flex items-center gap-2 md:gap-3 bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
+        {/* Time Remaining Card */}
+        <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-800/80">
           <Clock
-            className={`w-4 h-4 ${
+            className={`w-3.5 h-3.5 ${
               isTimeCritical ? 'text-red-500 animate-bounce' : 'text-cyan-400'
             }`}
           />
           <div>
-            <div className="text-[10px] text-slate-400 uppercase font-mono">Shift Time</div>
+            <div className="text-[9px] text-slate-400 uppercase font-mono leading-none flex items-center gap-1">
+              <span>Shift</span>
+              {stats.timeRemaining <= 90 && stats.timeRemaining > 0 && status === 'running' && (
+                <span className="text-[8px] font-bold text-amber-400 bg-amber-950 px-1 py-0.2 rounded border border-amber-600 animate-pulse">
+                  2ND HALF (3s)
+                </span>
+              )}
+            </div>
             <div
-              className={`font-mono text-base md:text-lg font-bold leading-none ${
-                isTimeCritical ? 'text-red-400 animate-pulse' : 'text-slate-100'
+              className={`font-mono text-sm md:text-base font-bold leading-none ${
+                isTimeCritical
+                  ? 'text-red-400 animate-pulse'
+                  : stats.timeRemaining <= 90 && status === 'running'
+                  ? 'text-amber-300'
+                  : 'text-slate-100'
               }`}
             >
               {formattedTime}
@@ -104,57 +118,51 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           </div>
         </div>
 
-        <div className="w-px h-7 bg-slate-800" />
-
-        {/* Score */}
-        <div className="flex items-center gap-2">
-          <Award className="w-4 h-4 text-amber-400" />
+        {/* Score Card */}
+        <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-800/80">
+          <Award className="w-3.5 h-3.5 text-amber-400" />
           <div>
-            <div className="text-[10px] text-slate-400 uppercase font-mono">Score</div>
-            <div className="font-mono text-base md:text-lg font-bold leading-none text-amber-300">
+            <div className="text-[9px] text-slate-400 uppercase font-mono leading-none">Score</div>
+            <div className="font-mono text-sm md:text-base font-bold leading-none text-amber-300">
               {stats.score}
             </div>
           </div>
         </div>
 
-        <div className="w-px h-7 bg-slate-800" />
-
-        {/* Sorted Boxes */}
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        {/* Sorted Boxes Card */}
+        <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-800/80">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
           <div>
-            <div className="text-[10px] text-slate-400 uppercase font-mono">Sorted</div>
-            <div className="font-mono text-base md:text-lg font-bold leading-none text-emerald-400">
+            <div className="text-[9px] text-slate-400 uppercase font-mono leading-none">Sorted</div>
+            <div className="font-mono text-sm md:text-base font-bold leading-none text-emerald-400">
               {stats.sortedCount}
             </div>
           </div>
         </div>
 
-        <div className="w-px h-7 bg-slate-800 hidden sm:block" />
-
-        {/* Accuracy */}
-        <div className="hidden sm:flex items-center gap-2">
-          <Target className="w-4 h-4 text-blue-400" />
+        {/* Accuracy Card */}
+        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-800/80">
+          <Target className="w-3.5 h-3.5 text-blue-400" />
           <div>
-            <div className="text-[10px] text-slate-400 uppercase font-mono">Accuracy</div>
-            <div className="font-mono text-base md:text-lg font-bold leading-none text-blue-400">
+            <div className="text-[9px] text-slate-400 uppercase font-mono leading-none">Accuracy</div>
+            <div className="font-mono text-sm md:text-base font-bold leading-none text-blue-400">
               {stats.accuracy}%
             </div>
           </div>
         </div>
       </div>
 
-      {/* Controls & Actions */}
-      <div className="flex items-center gap-2">
+      {/* Right: Rectangular Control Action Buttons */}
+      <div className="flex items-center gap-1.5 md:gap-2">
         {/* Game State Control */}
         {status === 'idle' || status === 'game_over' ? (
           <button
             onClick={onStart}
-            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-tech font-bold text-xs tracking-wider flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-tech font-bold text-xs tracking-wider flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
             title="Start 3-minute sorting shift"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            START SHIFT
+            <span>START SHIFT</span>
           </button>
         ) : status === 'running' ? (
           <button
@@ -163,7 +171,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             title="Pause simulation"
           >
             <Pause className="w-3.5 h-3.5 fill-current" />
-            PAUSE
+            <span>PAUSE</span>
           </button>
         ) : (
           <button
@@ -172,7 +180,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             title="Resume simulation"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            RESUME
+            <span>RESUME</span>
           </button>
         )}
 
@@ -181,9 +189,9 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           <button
             onClick={onStop}
             className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 hover:text-rose-400 text-slate-300 border border-slate-700 transition-all cursor-pointer"
-            title="Stop robot and conveyor motion"
+            title="Stop motion"
           >
-            <Square className="w-4 h-4 fill-current" />
+            <Square className="w-3.5 h-3.5 fill-current" />
           </button>
         )}
 
@@ -191,12 +199,10 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         <button
           onClick={onReset}
           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all cursor-pointer"
-          title="Reset score and conveyor"
+          title="Reset shift stats and conveyor"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-3.5 h-3.5" />
         </button>
-
-        <div className="w-px h-6 bg-slate-800 hidden md:block" />
 
         {/* Calibrate button */}
         <button
@@ -204,11 +210,11 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-mono text-xs cursor-pointer transition-all"
           title="Calibrate neutral hand position"
         >
-          <Crosshair className="w-3.5 h-3.5 text-cyan-400" />
-          CALIBRATE
+          <Crosshair className="w-3 h-3 text-cyan-400" />
+          <span className="hidden xl:inline">CALIBRATE</span>
         </button>
 
-        {/* Input Mode Switch (Webcam vs Mouse/Touch Fallback) */}
+        {/* Input Mode Switch (Webcam vs Mouse/Touch) */}
         <button
           onClick={onToggleMouse}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-mono text-xs cursor-pointer transition-all ${
@@ -225,12 +231,12 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           {useMouseFallback ? (
             <>
               <Touchpad className="w-3.5 h-3.5 text-amber-400" />
-              <span className="font-semibold">MOUSE / TOUCH</span>
+              <span className="font-semibold text-[11px]">TOUCH/MOUSE</span>
             </>
           ) : (
             <>
               <Camera className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">HAND GESTURE</span>
+              <span className="text-[11px] hidden sm:inline">GESTURE</span>
             </>
           )}
         </button>
@@ -239,18 +245,29 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         <button
           onClick={onToggleMute}
           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all cursor-pointer"
-          title={isMuted ? 'Unmute industrial audio' : 'Mute audio'}
+          title={isMuted ? 'Unmute audio' : 'Mute audio'}
         >
-          {isMuted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
+          {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-500" /> : <Volume2 className="w-3.5 h-3.5 text-cyan-400" />}
         </button>
 
-        {/* Fullscreen */}
+        {/* Change Operator button */}
+        {onChangeOperator && (
+          <button
+            onClick={onChangeOperator}
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition-all cursor-pointer"
+            title="Change Operator / Exit to Instructions"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Fullscreen toggle */}
         <button
           onClick={onToggleFullscreen}
           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all cursor-pointer hidden sm:block"
-          title="Toggle Fullscreen for iPad/Desktop"
+          title="Toggle Fullscreen"
         >
-          <Maximize2 className="w-4 h-4" />
+          <Maximize2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </header>
