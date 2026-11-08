@@ -967,9 +967,9 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
           className="w-full h-full block cursor-crosshair select-none"
         />
 
-        {/* Floating Tactile Grip Button (Positioned at bottom-left to leave bottom-right HUD completely visible) */}
+        {/* Floating Tactile Grip Button (Centered horizontally in view) */}
         {useMouseFallback && (
-          <div className="absolute bottom-3 left-3 z-30 flex items-center gap-2">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center justify-center">
             <button
               onClick={(e) => {
                 e.stopPropagation();

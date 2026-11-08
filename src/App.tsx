@@ -291,8 +291,8 @@ export default function App() {
         onChangeOperator={() => setCurrentPage('welcome')}
       />
 
-      {/* 2. Main Two-Panel Workspace: Clean aligned rectangular cockpit preserving native aspect ratio */}
-      <main className="flex-1 w-full max-w-[1440px] mx-auto p-2 sm:p-2.5 flex flex-col justify-center min-h-0 overflow-y-auto lg:overflow-hidden">
+      {/* 2. Main Two-Panel Workspace: Clean aligned rectangular cockpit positioned close to top banner */}
+      <main className="flex-1 w-full max-w-[1440px] mx-auto px-2 sm:px-2.5 pt-1.5 sm:pt-2 pb-2 flex flex-col justify-start min-h-0 overflow-y-auto lg:overflow-hidden">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
           {/* LEFT PANEL (~67% width: 8 of 12 columns) - High-Fidelity 2D Robot Workspace */}
           <div className="lg:col-span-8 w-full flex flex-col min-h-0">
