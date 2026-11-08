@@ -923,9 +923,9 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
   const isGripperClosed = engine.robot.getGripperClosed();
 
   return (
-    <div className="relative w-full h-full min-h-0 flex flex-col items-center justify-between p-1.5 lg:p-2 overflow-hidden simulation-grid rounded-xl border border-slate-800 shadow-xl">
+    <div className="relative w-full flex flex-col items-center justify-start overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-xl">
       {/* Simulation Title bar */}
-      <div className="w-full flex items-center justify-between px-3 py-1 bg-slate-900/95 border-b border-slate-800 rounded-t-lg text-xs text-slate-300 font-mono shrink-0">
+      <div className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-xs text-slate-300 font-mono shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
           <span className="font-tech font-bold text-slate-100 tracking-wider">
@@ -952,8 +952,8 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
         </div>
       </div>
 
-      {/* Main Canvas */}
-      <div className="relative w-full flex-1 min-h-0 flex items-center justify-center bg-slate-100 rounded-b-lg overflow-hidden shadow-inner">
+      {/* Main Canvas - Exact 840:560 (1.5) aspect ratio with NO top or bottom blanks */}
+      <div className="relative w-full aspect-[840/560] overflow-hidden bg-slate-950 flex items-center justify-center select-none">
         <canvas
           ref={canvasRef}
           width={V_WIDTH}
@@ -964,7 +964,7 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           style={{ touchAction: 'none' }}
-          className="w-full h-full object-contain cursor-crosshair select-none"
+          className="w-full h-full block cursor-crosshair select-none"
         />
 
         {/* Floating Tactile Grip Button (Positioned at bottom-left to leave bottom-right HUD completely visible) */}
@@ -1001,9 +1001,9 @@ export const RobotSimulation: React.FC<RobotSimulationProps> = ({
         )}
       </div>
 
-      {/* Control instruction footer */}
+      {/* Control instruction footer docked flush with canvas */}
       {useMouseFallback && (
-        <div className="w-full mt-2 py-1 px-3 bg-slate-900/90 rounded-lg border border-slate-800 flex items-center justify-between text-[11px] text-slate-300 font-mono">
+        <div className="w-full py-1.5 px-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300 font-mono shrink-0">
           <div className="flex items-center gap-1.5 text-amber-300">
             <Move className="w-3.5 h-3.5" />
             <span>

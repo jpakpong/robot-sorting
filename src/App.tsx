@@ -66,6 +66,8 @@ export default function App() {
   const [isGripperClosed, setIsGripperClosed] = useState<boolean>(false);
   const [isRobotPaused, setIsRobotPaused] = useState<boolean>(false);
 
+
+
   // Initialize tracker instance on mount
   useEffect(() => {
     const tracker = new HandTracker({
@@ -289,47 +291,49 @@ export default function App() {
         onChangeOperator={() => setCurrentPage('welcome')}
       />
 
-      {/* 2. Main Two-Panel Rectangular Workspace (Tailored for iPad 11-inch aspect ratio) */}
-      <main className="flex-1 w-full max-w-[1440px] mx-auto p-2 sm:p-2.5 grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch min-h-0 overflow-hidden">
-        {/* LEFT PANEL (~67% width: 8 of 12 columns) - Rectangular Simulation Container */}
-        <div className="lg:col-span-8 w-full h-full flex flex-col min-h-0 overflow-hidden">
-          <RobotSimulation
-            engine={engine}
-            useMouseFallback={useMouseFallback}
-            onToggleGripper={handleToggleGripper}
-            onCanvasPointerDown={() => {
-              setIsGripperClosed(engine.robot.getGripperClosed());
-            }}
-          />
-        </div>
+      {/* 2. Main Two-Panel Workspace: Clean aligned rectangular cockpit preserving native aspect ratio */}
+      <main className="flex-1 w-full max-w-[1440px] mx-auto p-2 sm:p-2.5 flex flex-col justify-center min-h-0 overflow-y-auto lg:overflow-hidden">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
+          {/* LEFT PANEL (~67% width: 8 of 12 columns) - High-Fidelity 2D Robot Workspace */}
+          <div className="lg:col-span-8 w-full flex flex-col min-h-0">
+            <RobotSimulation
+              engine={engine}
+              useMouseFallback={useMouseFallback}
+              onToggleGripper={handleToggleGripper}
+              onCanvasPointerDown={() => {
+                setIsGripperClosed(engine.robot.getGripperClosed());
+              }}
+            />
+          </div>
 
-        {/* RIGHT PANEL (~33% width: 4 of 12 columns) - Rectangular Vision & Telemetry Cards */}
-        <div className="lg:col-span-4 w-full h-full flex flex-col gap-2 min-h-0 overflow-y-auto pr-0.5">
-          {/* Live Webcam Card */}
-          <WebcamPanel
-            videoRef={videoRef}
-            trackerStatus={trackerStatus}
-            statusMessage={statusMessage}
-            gesture={gesture}
-            onStartCamera={handleStartCamera}
-            onStopCamera={handleStopCamera}
-          />
+          {/* RIGHT PANEL (~33% width: 4 of 12 columns) - Rectangular Vision & Telemetry Cards */}
+          <div className="lg:col-span-4 w-full flex flex-col gap-2 min-h-0">
+            {/* Live Webcam Card */}
+            <WebcamPanel
+              videoRef={videoRef}
+              trackerStatus={trackerStatus}
+              statusMessage={statusMessage}
+              gesture={gesture}
+              onStartCamera={handleStartCamera}
+              onStopCamera={handleStopCamera}
+            />
 
-          {/* Real-time Gesture Telemetry & Instruction Cards */}
-          <GestureStatus
-            gesture={gesture}
-            isGripperClosed={isGripperClosed}
-            isRobotPaused={isRobotPaused}
-            useMouseFallback={useMouseFallback}
-          />
+            {/* Real-time Gesture Telemetry & Instruction Cards */}
+            <GestureStatus
+              gesture={gesture}
+              isGripperClosed={isGripperClosed}
+              isRobotPaused={isRobotPaused}
+              useMouseFallback={useMouseFallback}
+            />
 
-          {/* Institutional Credit Footer */}
-          <div
-            data-dept="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
-            aria-label="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
-            className="text-center text-[10px] font-mono text-slate-500 py-1 shrink-0"
-          >
-            Department of Mechanical Engineering, Faculty of Engineering, Burapha University
+            {/* Institutional Credit Footer */}
+            <div
+              data-dept="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
+              aria-label="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
+              className="text-center text-[10px] font-mono text-slate-500 py-1 shrink-0"
+            >
+              Department of Mechanical Engineering, Faculty of Engineering, Burapha University
+            </div>
           </div>
         </div>
       </main>
