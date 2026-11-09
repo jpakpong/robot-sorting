@@ -9,11 +9,7 @@ import {
   ArrowRight,
   Hand,
   MousePointer,
-  CheckCircle2,
-  Award,
   Clock,
-  Sparkles,
-  Layers,
   ShieldAlert,
 } from 'lucide-react';
 
@@ -53,9 +49,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           <h1 className="font-tech text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-wider uppercase">
             SORTING SIMULATION
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto mt-2 font-mono">
-            Vision-Guided & Touch-Controlled 2R Articulated Robotic Arm Pick-and-Place Simulation
-          </p>
         </div>
 
         {/* Operator Name Form Card */}
@@ -120,9 +113,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             <p className="text-slate-300 leading-relaxed text-[11px]">
               Colored boxes advance automatically on the conveyor. Move the robotic end-effector to the pickup station, grasp the box, and transfer it into the matching color bin (Red, Yellow, Blue, Green).
             </p>
-            <div className="bg-amber-950/60 border border-amber-600/40 rounded-lg p-2 text-[10px] text-amber-200 leading-tight">
-              <span className="font-bold text-amber-300">⚡ FIRST HALF vs SECOND HALF (1:30):</span> First Half boxes simply stop at pickup. Second Half boxes arrive every 4s, stop and wait for exactly 3s (showing dwell timer), then continuously move to the end!
-            </div>
             <div className="mt-auto pt-2 border-t border-slate-800/80 flex items-center justify-between font-mono text-[10px] text-slate-400">
               <span className="text-emerald-400 font-bold">+10 pts Correct Sort</span>
               <span className="text-rose-400 font-bold">-5 pts Drop/Collision</span>
@@ -182,7 +172,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         <div
           data-dept="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
           aria-label="Department of Mechanical Engineering, Faculty of Engineering, Burapha Univerity"
-          className="mt-8 text-center text-xs sm:text-sm font-mono text-slate-400 tracking-wide font-medium"
+          className="mt-8 text-center text-xs sm:text-sm font-mono text-yellow-400 tracking-wide font-medium"
         >
           Department of Mechanical Engineering, Faculty of Engineering, Burapha University
         </div>
